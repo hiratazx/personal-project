@@ -2,6 +2,7 @@
 
 ## What is this? ##
 As you can see, this is used to be HDMI Monitor workaround for ASUS K45VD in Windows
+
 Actually, it's not only for ASUS K45VD. You can use it if you faced the same issue as me
 
 ## Why I make this? ##
