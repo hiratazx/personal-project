@@ -18,7 +18,7 @@ Just run the script, it'll ask for administrator
 ## Can I run it on startup? ##
 Yes, you can. All you need is just copy the bat script into Startup folder in "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup"
 
-If your Laptop Display were dead like me, just wait for UAC sound, press Left Arrow Key and Enter
+If your Laptop Display were dead like me, just wait for UAC sound, press Left Arrow Key and Enter.
 I use that method because I can't think about other method (yes, I don't use Windows for almost 2 years)
 
 ## It's for Intel Graphics, can I use it on another Display Adapter? ##
