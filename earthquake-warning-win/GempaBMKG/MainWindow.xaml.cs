@@ -1,191 +1,184 @@
+using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
 using System.Windows.Threading;
-using Newtonsoft.Json;
 
 namespace GempaBMKG
 {
     public partial class MainWindow : Window
     {
         private static readonly HttpClient client = new HttpClient();
-        private const string URL_GEMPA_REALTIME = "https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json";
-        private const string URL_GEMPA_TERKINI = "https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json";
-        
         private DispatcherTimer refreshTimer;
+        private string currentMode = "terkini";
 
         public MainWindow()
         {
             InitializeComponent();
-            Loaded += MainWindow_Loaded;
+            this.Loaded += MainWindow_Loaded;
+
+            refreshTimer = new DispatcherTimer();
+            refreshTimer.Interval = TimeSpan.FromMinutes(5);
+            refreshTimer.Tick += RefreshTimer_Tick;
+        }
+
+        private void RefreshTimer_Tick(object? sender, EventArgs e)
+        {
+            if (currentMode == "realtime")
+            {
+                _ = FetchDataAsync(currentMode);
+            }
         }
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            await LoadRealtimeQuakeData();
-
-            refreshTimer = new DispatcherTimer();
-            refreshTimer.Interval = TimeSpan.FromSeconds(60);
-            refreshTimer.Tick += RefreshTimer_Tick;
-            refreshTimer.Start();
+            await FetchDataAsync("terkini");
         }
-        
-        private async void RefreshTimer_Tick(object sender, EventArgs e)
+
+        private async Task FetchDataAsync(string mode)
         {
-            if (ContentTitle.Text == "Gempa Realtime")
+            // Tampilkan indikator loading
+            LoadingIndicator.Visibility = Visibility.Visible;
+            MainContent.Visibility = Visibility.Collapsed;
+            ErrorText.Visibility = Visibility.Collapsed;
+
+            string url = "";
+            if (mode == "terkini")
             {
-                await LoadRealtimeQuakeData();
+                url = "https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json";
             }
-        }
+            else
+            {
+                url = "https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json";
+            }
 
-        private async Task<string> FetchDataAsync(string url)
-        {
             try
             {
                 HttpResponseMessage response = await client.GetAsync(url);
                 response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsStringAsync();
-            }
-            catch (HttpRequestException e)
-            {
-                return $"Error: Gagal menyambung ke server BMKG. Pesan: {e.Message}";
-            }
-        }
+                string responseBody = await response.Content.ReadAsStringAsync();
 
-        private void UpdateContent(string title, string content)
-        {
-            ContentTitle.Text = title;
-            ContentTextBox.Text = content;
-        }
-
-        private void UpdateActiveButton(Button activeButton)
-        {
-            BtnRealtime.ClearValue(Button.BackgroundProperty);
-            BtnTerkini.ClearValue(Button.BackgroundProperty);
-
-            activeButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF005A9E"));
-        }
-
-        private async void BtnRealtime_Click(object sender, RoutedEventArgs e)
-        {
-            await LoadRealtimeQuakeData();
-        }
-
-        private async void BtnTerkini_Click(object sender, RoutedEventArgs e)
-        {
-           await LoadLatestQuakesData();
-        }
-        
-        private async Task LoadRealtimeQuakeData()
-        {
-            UpdateActiveButton(BtnRealtime);
-            UpdateContent("Gempa Realtime", "Sedang memuat data terbaru...");
-            string jsonString = await FetchDataAsync(URL_GEMPA_REALTIME);
-
-            if (jsonString.StartsWith("Error:"))
-            {
-                UpdateContent("Gempa Realtime", jsonString);
-                return;
-            }
-
-            try
-            {
-                var data = JsonConvert.DeserializeObject<InfoGempaContainer>(jsonString);
-                var gempa = data.Infogempa.gempa;
-
-                var sb = new StringBuilder();
-                sb.AppendLine("--- GEMPA BUMI TERBARU ---");
-                sb.AppendLine();
-                sb.AppendLine($"Waktu         : {gempa.Jam}, {gempa.Tanggal}");
-                sb.AppendLine($"Magnitudo     : {gempa.Magnitude} SR");
-                sb.AppendLine($"Kedalaman     : {gempa.Kedalaman}");
-                sb.AppendLine($"Koordinat     : {gempa.Lintang}, {gempa.Bujur}");
-                sb.AppendLine();
-                sb.AppendLine($"Lokasi        : {gempa.Wilayah}");
-                sb.AppendLine($"Potensi       : {gempa.Potensi}");
-                sb.AppendLine();
-                sb.AppendLine();
-                sb.AppendLine("Sumber data: BMKG INATEWS");
-                UpdateContent("Gempa Realtime", sb.ToString());
-            }
-            catch (Exception ex)
-            {
-                UpdateContent("Gempa Realtime", $"Gagal mem-parsing data. {ex.Message}");
-            }
-        }
-
-        private async Task LoadLatestQuakesData()
-        {
-            UpdateActiveButton(BtnTerkini);
-            UpdateContent("Daftar Gempa Terkini (M > 5.0)", "Sedang memuat data...");
-            string jsonString = await FetchDataAsync(URL_GEMPA_TERKINI);
-
-            if (jsonString.StartsWith("Error:"))
-            {
-                UpdateContent("Daftar Gempa Terkini (M > 5.0)", jsonString);
-                return;
-            }
-
-            try
-            {
-                var data = JsonConvert.DeserializeObject<InfoGempaTerkiniContainer>(jsonString);
-                var sb = new StringBuilder();
-                sb.AppendLine("--- 15 GEMPA BUMI DIRASAKAN TERKINI ---");
-                sb.AppendLine();
-
-                int count = 1;
-                foreach (var gempa in data.Infogempa.gempa)
+                if (mode == "terkini")
                 {
-                    sb.AppendLine($"{count++}. Tanggal: {gempa.Tanggal}, Jam: {gempa.Jam}");
-                    sb.AppendLine($"   Magnitudo: {gempa.Magnitude} SR, Kedalaman: {gempa.Kedalaman}");
-                    sb.AppendLine($"   Lokasi: {gempa.Wilayah}");
-                    sb.AppendLine($"   Potensi: {gempa.Potensi}");
-                    sb.AppendLine("--------------------------------------------------");
+                    var data = JsonConvert.DeserializeObject<GempaTerkiniRoot>(responseBody);
+                    UpdateContent(data?.Infogempa.gempa);
                 }
-                sb.AppendLine("Sumber data: BMKG INATEWS");
-                UpdateContent("Daftar Gempa Terkini (M > 5.0)", sb.ToString());
+                else
+                {
+                    var data = JsonConvert.DeserializeObject<GempaRealtimeRoot>(responseBody);
+                    UpdateContent(new List<GempaInfo> { data?.Infogempa.gempa });
+                }
             }
             catch (Exception ex)
             {
-                UpdateContent("Daftar Gempa Terkini (M > 5.0)", $"Gagal mem-parsing data. {ex.Message}");
+                ErrorText.Text = $"Gagal mengambil data: {ex.Message}";
+                ErrorText.Visibility = Visibility.Visible;
+            }
+            finally
+            {
+                LoadingIndicator.Visibility = Visibility.Collapsed;
+                MainContent.Visibility = Visibility.Visible;
             }
         }
-    }
 
-    public class GempaData
-    {
-        public string Tanggal { get; set; }
-        public string Jam { get; set; }
-        public string Magnitude { get; set; }
-        public string Kedalaman { get; set; }
-        public string Lintang { get; set; }
-        public string Bujur { get; set; }
-        public string Wilayah { get; set; }
-        public string Potensi { get; set; }
-    }
+        private void UpdateContent(List<GempaInfo>? gempaList)
+        {
+            MainContent.Children.Clear();
 
-    public class InfoGempa
-    {
-        public GempaData gempa { get; set; }
-    }
+            if (gempaList == null || !gempaList.Any())
+            {
+                MainContent.Children.Add(new TextBlock { Text = "Tidak ada data gempa untuk ditampilkan.", Foreground = Brushes.White, FontSize = 16 });
+                return;
+            }
 
-    public class InfoGempaContainer
-    {
-        public InfoGempa Infogempa { get; set; }
-    }
-    
-    public class InfoGempaTerkini
-    {
-        public GempaData[] gempa { get; set; }
-    }
+            foreach (var gempa in gempaList)
+            {
+                if (gempa == null) continue;
 
-    public class InfoGempaTerkiniContainer
-    {
-        public InfoGempaTerkini Infogempa { get; set; }
+                var border = new Border
+                {
+                    Background = new SolidColorBrush(Color.FromRgb(0x2D, 0x2D, 0x2D)),
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(15),
+                    Margin = new Thickness(0, 0, 0, 15)
+                };
+
+                var grid = new Grid();
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                var stackPanel = new StackPanel { Margin = new Thickness(15, 0, 0, 0) };
+                Grid.SetColumn(stackPanel, 1);
+
+                stackPanel.Children.Add(new TextBlock { Text = gempa.Wilayah ?? "N/A", Foreground = Brushes.White, FontSize = 18, FontWeight = FontWeights.Bold, TextWrapping = TextWrapping.Wrap });
+                stackPanel.Children.Add(new TextBlock { Text = $"{gempa.Tanggal ?? "N/A"} - {gempa.Jam ?? "N/A"}", Foreground = Brushes.LightGray, Margin = new Thickness(0, 5, 0, 10) });
+                stackPanel.Children.Add(new TextBlock { Text = $"Magnitude: {gempa.Magnitude ?? "N/A"} | Kedalaman: {gempa.Kedalaman ?? "N/A"}", Foreground = Brushes.White, Margin = new Thickness(0, 2, 0, 2) });
+                stackPanel.Children.Add(new TextBlock { Text = $"Lokasi: {gempa.Lintang ?? "N/A"} | {gempa.Bujur ?? "N/A"}", Foreground = Brushes.White, Margin = new Thickness(0, 2, 0, 2) });
+                stackPanel.Children.Add(new TextBlock { Text = gempa.Potensi ?? "N/A", Foreground = Brushes.Orange, Margin = new Thickness(0, 8, 0, 0), TextWrapping = TextWrapping.Wrap });
+                
+                grid.Children.Add(stackPanel);
+                border.Child = grid;
+
+                MainContent.Children.Add(border);
+            }
+        }
+
+        private void BtnTerkini_Click(object sender, RoutedEventArgs e)
+        {
+            currentMode = "terkini";
+            refreshTimer.Stop();
+            _ = FetchDataAsync(currentMode);
+        }
+
+        private void BtnRealtime_Click(object sender, RoutedEventArgs e)
+        {
+            currentMode = "realtime";
+            refreshTimer.Start();
+            _ = FetchDataAsync(currentMode);
+        }
+
+        public class GempaInfo
+        {
+            public string? Tanggal { get; set; }
+            public string? Jam { get; set; }
+            public string? Magnitude { get; set; }
+            public string? Kedalaman { get; set; }
+            public string? Lintang { get; set; }
+            public string? Bujur { get; set; }
+            public string? Wilayah { get; set; }
+            public string? Potensi { get; set; }
+        }
+
+        public class InfoGempaTerkini
+        {
+            public List<GempaInfo>? gempa { get; set; }
+        }
+
+        public class GempaTerkiniRoot
+        {
+            public InfoGempaTerkini? Infogempa { get; set; }
+        }
+
+        public class InfoGempaRealtime
+        {
+            public GempaInfo? gempa { get; set; }
+        }
+
+        public class GempaRealtimeRoot
+        {
+            public InfoGempaRealtime? Infogempa { get; set; }
+        }
     }
 }
-
