@@ -1,0 +1,34 @@
+name: Build WPF Application (Earthquake Warning)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+    paths:
+      - 'earthquake-warning-win/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Setup NuGet
+      uses: nuget/setup-nuget@v2
+
+    - name: Restore NuGet packages
+      run: nuget restore earthquake-warning-win/GempaBMKG.sln
+
+    - name: Build the application
+      run: msbuild.exe /p:Configuration=Release earthquake-warning-win/GempaBMKG.sln
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: GempaBMKG-Windows-App
+        path: earthquake-warning-win/GempaBMKG/bin/Release/
