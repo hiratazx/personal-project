@@ -5,96 +5,64 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GempaBMKG"
         mc:Ignorable="d"
-        Title="InaTEWS BMKG - Peringatan Gempa Dini" Height="600" Width="850"
-        MinHeight="500" MinWidth="700"
+        Title="Peringatan Gempa BMKG" Height="720" Width="480"
         WindowStartupLocation="CenterScreen"
-        Background="#FF202020">
+        Background="#1C1C1C">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Peringatan Gempa Indonesia" FontSize="24" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,20,0,20" HorizontalAlignment="Center">
+            <Button x:Name="BtnTerkini" Content="Gempa Terkini (M > 5.0)" Click="BtnTerkini_Click" Margin="0,0,10,0" Style="{StaticResource FluentButtonStyle}"/>
+            <Button x:Name="BtnRealtime" Content="Gempa Realtime (Dirasakan)" Click="BtnRealtime_Click" Style="{StaticResource FluentButtonStyle}"/>
+        </StackPanel>
+
+        <Grid Grid.Row="2">
+            <ProgressBar x:Name="LoadingIndicator" IsIndeterminate="True" Visibility="Collapsed" Width="100" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+            <TextBlock x:Name="ErrorText" Foreground="Red" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" FontSize="14"/>
+
+            <ScrollViewer x:Name="MainContent" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="ContentStackPanel"/>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+
     <Window.Resources>
-        <Style x:Key="FluentNavButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderThickness" Value="0"/>
+        <Style x:Key="FluentButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#333333"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#444444"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,8"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Padding" Value="20,12"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="buttonBorder" 
-                                Background="{TemplateBinding Background}" 
-                                CornerRadius="5">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
-                                              VerticalAlignment="Center" 
-                                              Margin="{TemplateBinding Padding}"/>
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#FF2D2D2D"/>
+                    <Setter Property="Background" Value="#454545"/>
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#FF3C3C3C"/>
+                    <Setter Property="Background" Value="#2A2A2A"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
     </Window.Resources>
-
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-
-        <Border Grid.Column="0" Background="#FF2B2B2B" Padding="10">
-            <StackPanel>
-                <TextBlock Text="Menu Utama" 
-                           Foreground="White" 
-                           FontSize="20" 
-                           FontWeight="Bold" 
-                           Margin="10,15,10,15"/>
-                           
-                <Button x:Name="BtnRealtime" 
-                        Content="Gempa Realtime" 
-                        Style="{StaticResource FluentNavButtonStyle}"
-                        Click="BtnRealtime_Click"/>
-                        
-                <Button x:Name="BtnTerkini" 
-                        Content="Gempa Terkini" 
-                        Style="{StaticResource FluentNavButtonStyle}"
-                        Click="BtnTerkini_Click"/>
-            </StackPanel>
-        </Border>
-
-        <Grid Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <TextBlock x:Name="ContentTitle" 
-                       Text="Memuat data..." 
-                       Grid.Row="0"
-                       Foreground="White"
-                       FontSize="26"
-                       FontWeight="SemiBold"
-                       Margin="30,25,30,15"/>
-
-            <Border Grid.Row="1" Margin="30,0,30,30" CornerRadius="8" Background="#FF2B2B2B">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="2">
-                    <TextBox x:Name="ContentTextBox"
-                             TextWrapping="Wrap"
-                             IsReadOnly="True"
-                             Background="Transparent"
-                             Foreground="#E0E0E0"
-                             FontSize="14"
-                             FontFamily="Consolas"
-                             BorderThickness="0"
-                             Padding="15"/>
-                </ScrollViewer>
-            </Border>
-        </Grid>
-    </Grid>
 </Window>
-
