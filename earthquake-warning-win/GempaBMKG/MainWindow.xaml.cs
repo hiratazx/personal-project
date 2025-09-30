@@ -49,7 +49,6 @@ namespace GempaBMKG
 
         private async Task FetchDataAsync(string mode)
         {
-            // Tampilkan indikator loading
             LoadingIndicator.Visibility = Visibility.Visible;
             MainContent.Visibility = Visibility.Collapsed;
             ErrorText.Visibility = Visibility.Collapsed;
@@ -73,12 +72,20 @@ namespace GempaBMKG
                 if (mode == "terkini")
                 {
                     var data = JsonConvert.DeserializeObject<GempaTerkiniRoot>(responseBody);
-                    UpdateContent(data?.Infogempa.gempa);
+                    UpdateContent(data?.Infogempa?.gempa);
                 }
                 else
                 {
                     var data = JsonConvert.DeserializeObject<GempaRealtimeRoot>(responseBody);
-                    UpdateContent(new List<GempaInfo> { data?.Infogempa.gempa });
+                    var gempaInfo = data?.Infogempa?.gempa;
+                    if (gempaInfo != null)
+                    {
+                        UpdateContent(new List<GempaInfo> { gempaInfo });
+                    }
+                    else
+                    {
+                        UpdateContent(new List<GempaInfo>());
+                    }
                 }
             }
             catch (Exception ex)
@@ -95,11 +102,11 @@ namespace GempaBMKG
 
         private void UpdateContent(List<GempaInfo>? gempaList)
         {
-            MainContent.Children.Clear();
+            ContentStackPanel.Children.Clear(); 
 
             if (gempaList == null || !gempaList.Any())
             {
-                MainContent.Children.Add(new TextBlock { Text = "Tidak ada data gempa untuk ditampilkan.", Foreground = Brushes.White, FontSize = 16 });
+                ContentStackPanel.Children.Add(new TextBlock { Text = "Tidak ada data gempa untuk ditampilkan.", Foreground = Brushes.White, FontSize = 16 });
                 return;
             }
 
@@ -131,7 +138,7 @@ namespace GempaBMKG
                 grid.Children.Add(stackPanel);
                 border.Child = grid;
 
-                MainContent.Children.Add(border);
+                ContentStackPanel.Children.Add(border);
             }
         }
 
@@ -141,6 +148,7 @@ namespace GempaBMKG
             refreshTimer.Stop();
             _ = FetchDataAsync(currentMode);
         }
+
 
         private void BtnRealtime_Click(object sender, RoutedEventArgs e)
         {
@@ -182,3 +190,4 @@ namespace GempaBMKG
         }
     }
 }
+
